@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "word-translater"
+version = "0.1.0"
+description = ""
+authors = ["pibs01241 <i.bennis.ib@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langchain = "^0.3.6"
+openai = "^1.53.0"
+django = "^5.1.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+ruff = "^0.7.1"
+mypy = "^1.13.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
