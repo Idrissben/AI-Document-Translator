@@ -1,0 +1,16 @@
+#Virtual Environment and env variables
+.venv/
+.env
+
+#The experimentation db
+db.sqlite3
+
+#Cache
+__pycache__/
+temp/
+
+#Working files
+*.ipynb
+*.docx
+
+
