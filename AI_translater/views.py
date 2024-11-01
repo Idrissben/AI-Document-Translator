@@ -1,10 +1,18 @@
-# type: ignore
+#type: ignore
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import csrf_protect
-from src.AI_translater.translator import initialize_model, translate_text
-from src.AI_translater.utils import read_docx, write_docx
+from src.translater.translator import initialize_model, translate_text
+from src.translater.utils import (
+    read_docx,
+    write_docx,
+    read_pptx,
+    write_pptx,
+    read_excel,
+    write_excel,
+)
+import os
 
 
 @csrf_protect
@@ -26,30 +34,75 @@ def upload_and_translate(request):
             temp_file_path = default_storage.save(
                 "temp/" + uploaded_file.name, uploaded_file
             )
-
-            # Read the content
-            input_text = read_docx(temp_file_path)
+            file_extension = os.path.splitext(uploaded_file.name)[1].lower()
 
             # Initialize model
             model = initialize_model("gpt-4o")
 
-            # Translate the text
-            translated_text = translate_text(
-                input_text,
-                model=model,
-                source_lang=source_lang,
-                target_lang=target_lang,
-            )
+            # Process based on file type
+            if file_extension == ".docx":
+                # Read .docx content
+                input_text = read_docx(temp_file_path)
 
-            # Save translated file
-            output_file_path = f"temp/translated_{target_lang}_{uploaded_file.name}"
-            write_docx(translated_text, output_file_path)
+                # Translate the text
+                translated_text = translate_text(
+                    input_text,
+                    model=model,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                )
+
+                # Save translated .docx file
+                output_file_path = f"temp/translated_{target_lang}_{uploaded_file.name}"
+                write_docx(translated_text, output_file_path)
+
+            elif file_extension == ".pptx":
+                # Read .pptx content slide by slide
+                slides_content = read_pptx(temp_file_path)
+
+                # Translate each slide individually
+                translated_content = [
+                    translate_text(
+                        slide_text,
+                        model=model,
+                        source_lang=source_lang,
+                        target_lang=target_lang,
+                    )
+                    for slide_text in slides_content
+                ]
+
+                # Save translated .pptx file
+                output_file_path = f"temp/translated_{target_lang}_{uploaded_file.name}"
+                write_pptx(translated_content, output_file_path, temp_file_path)
+
+            elif file_extension == ".xlsx":
+                # Read .xlsx content
+                excel_content = read_excel(temp_file_path)
+
+                # Translate each row individually
+                translated_content = translate_text(
+                    excel_content,
+                    model=model,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                )
+
+                # Save translated .xlsx file
+                output_file_path = f"temp/translated_{target_lang}_{uploaded_file.name}"
+                write_excel(translated_content, output_file_path)
+
+            else:
+                return JsonResponse({"error": "Unsupported file format"}, status=400)
 
             # Return file for download
             with open(output_file_path, "rb") as f:
                 response = HttpResponse(
                     f.read(),
-                    content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    if file_extension == ".docx"
+                    else "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    if file_extension == ".pptx"
+                    else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
                 response["Content-Disposition"] = (
                     f'attachment; filename="translated_{uploaded_file.name}"'

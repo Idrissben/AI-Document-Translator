@@ -11,11 +11,13 @@ langchain = "^0.3.6"
 openai = "^1.53.0"
 django = "^5.1.2"
 langfuse = "^2.53.3"
-tiktoken = "^0.8.0"
-nltk = "^3.9.1"
-python-dotenv = "^1.0.1"
 langchain-openai = "^0.2.4"
 python-docx = "^1.1.2"
+langchain-community = "^0.3.4"
+langchain-core = "^0.3.15"
+openpyxl = "^3.1.5"
+python-pptx = "^1.0.2"
+nltk = "^3.9.1"
 
 
 [tool.poetry.group.dev.dependencies]

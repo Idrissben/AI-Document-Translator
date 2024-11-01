@@ -1,5 +1,8 @@
+#type: ignore
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langfuse.decorators import observe, langfuse_context
+from langchain_community.callbacks import get_openai_callback
 
 
 def initialize_model(model: str = "gpt-4o"):
@@ -11,6 +14,7 @@ def initialize_model(model: str = "gpt-4o"):
         print("Model Not Supported Yet")
 
 
+@observe(as_type="generation")
 def translate_text(
     text,
     model,
@@ -41,5 +45,15 @@ def translate_text(
         [("system", system_template), ("user", "{text}")]
     )
     chain = prompt_template | model | parser
-    translated_text = chain.invoke({"text": text})
+
+    with get_openai_callback() as cb:
+        translated_text = chain.invoke({"text": text})
+        langfuse_context.update_current_observation(
+            usage={
+                "input": cb.prompt_tokens,
+                "output": cb.completion_tokens,
+                "unit": "TOKENS",  # any of: "TOKENS", "CHARACTERS", "MILLISECONDS", "SECONDS", "IMAGES"
+                "total_cost": cb.total_cost,
+            }
+        )
     return translated_text.strip()
