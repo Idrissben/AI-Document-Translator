@@ -1,5 +1,5 @@
 """
-ASGI config for AI_translater project.
+ASGI config for llm_translator project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application  # type: ignore
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "AI_translater.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "llm_translator.settings")
 
 application = get_asgi_application()

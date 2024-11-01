@@ -1,4 +1,4 @@
-#type: ignore
+# type: ignore
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langfuse.decorators import observe, langfuse_context

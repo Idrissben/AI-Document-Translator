@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta Tags and Title -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Document Translator - Translation Complete</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gray-50 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-600">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-white text-3xl font-bold">AI Document Translator</h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-sm mt-8">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">
+                    {{ message }}
+                </h2>
+
+                <div class="text-center">
+                    <a href="{{ translated_file_url }}" class="text-blue-600 hover:text-blue-800">
+                        Download Translated Document
+                    </a>
+                </div>
+
+                {% if score %}
+                <div class="mt-4 text-center">
+                    <p>Translation Score: {{ score }}</p>
+                </div>
+                {% endif %}
+
+                <div class="mt-6 text-center">
+                    <a href="{% url 'upload_and_translate' %}" class="text-blue-600 hover:text-blue-800">
+                        Translate Another Document
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-500 text-sm">&copy; 2024 Idriss Bennis. LLM translator for Office files.</p>
+        </div>
+    </footer>
+</body>
+</html>

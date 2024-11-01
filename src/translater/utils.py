@@ -1,14 +1,15 @@
-#type: ignore
+# type: ignore
 import docx
 from pptx import Presentation
 import openpyxl
 import nltk
-from nltk.translate import meteor_score
+from nltk.translate.meteor_score import meteor_score
 
 try:
-    nltk.data.find('corpora/wordnet')
+    nltk.data.find("corpora/wordnet")
 except LookupError:
-    nltk.download('wordnet')
+    nltk.download("wordnet")
+
 
 # Functions to read and write .docx files
 def read_docx(file_path: str):
@@ -74,6 +75,7 @@ def write_excel(text: str, file_path: str):
         row_data = line.split("\t")
         sheet.append(row_data)
     workbook.save(file_path)
+
 
 def calculate_metric(reference_translation: str, predicted_translation: str):
     return meteor_score([reference_translation.split()], predicted_translation.split())
