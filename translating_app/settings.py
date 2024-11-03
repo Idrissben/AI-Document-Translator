@@ -34,10 +34,9 @@ ALLOWED_HOSTS: list[str] = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "localhost",
     "https://www.llmtranslate.org",
     "https://llmtranslate.org",
-    "aitranslator-127d6b3bff17.herokuapp.com",]
+    "https://aitranslator-127d6b3bff17.herokuapp.com",]
 
 # Application definition
 
