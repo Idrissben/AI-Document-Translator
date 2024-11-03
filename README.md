@@ -1,12 +1,15 @@
 # Office_translator
+
+[The app is accessible here](https://aitranslator-127d6b3bff17.herokuapp.com/upload/).
+
 An AI-based translator that can translate a given Word, Excel, or Powerpoint document in any given language. 
 It accepts .docx, .xlsx, or .pptx files of up to 10 mb, and contains the fellow features:
 
 - You can upload a glossary in the form of a .json file in order to translate some specific terms to a given word.
-- You can upload a target translated document in order to evaluate the quality of the translation using the METEOR_SCORE metric.
+- You can upload a target translated text in order to evaluate the quality of the translation using the METEOR_SCORE metric.
 - You can track the cost and number of token of each generation through Langfuse (currently limited to OpenAI models due to LangChain limitations).
 
-By default, this llm-translator only accepts OpenAI models, but it can easily be modified to use any LLM supported by langchain through the modification of the "initialize_model" function with the desired model.
+By default, this llm-translator only uses OpenAI models, but it can easily be modified to use any LLM supported by langchain through the modification of the "initialize_model" function with the desired model.
 
 It is a django application with a single endpoint "upload/" which is currently being received through an html interface.
 
@@ -50,14 +53,16 @@ You also need to have a .env with the following variables "OPENAI_API_KEY", "LAN
 
 Here are my Langfuse credentials if needed, otherwise head to langfuse.com to create an account:
 
+```bash
 LANGFUSE_SECRET_KEY=sk-lf-b868a424-a2e5-4a40-ad7b-54695811dbb4
 LANGFUSE_PUBLIC_KEY=pk-lf-9bcf4095-35f8-43c4-883d-5da1968e4e0a
 LANGFUSE_HOST="https://cloud.langfuse.com"
+```
+
+In order to run the application if you wish to clone it, simply run the following: 
 
 ```bash
 poetry install
-
-django manage.py migrate
 
 django manage.py runserver
 ```
