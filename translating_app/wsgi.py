@@ -1,5 +1,5 @@
 """
-WSGI config for llm_translator project.
+WSGI config for translating_app project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application  # type: ignore
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "llm_translator.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "translating_app.settings")
 
 application = get_wsgi_application()

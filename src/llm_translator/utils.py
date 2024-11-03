@@ -28,31 +28,32 @@ def write_docx(text: str, file_path: str):
     doc.save(file_path)
 
 
-# Function to read .pptx files and preserve slide structure
 def read_pptx(file_path: str):
     prs = Presentation(file_path)
     slides_content = []
     for slide in prs.slides:
-        slide_text = []
-        for shape in slide.shapes:
+        slide_texts = []
+        for idx, shape in enumerate(slide.shapes):
             if hasattr(shape, "text") and shape.text.strip() != "":
-                slide_text.append(shape.text)
-        slides_content.append("\n".join(slide_text))  # Combine text per slide
-    return slides_content  # Return a list with each slide's text separately
+                slide_texts.append((idx, shape.text))  # Store index and text
+        slides_content.append(
+            slide_texts
+        )  # List of (shape_index, text) tuples per slide
+    return slides_content  # Returns a list of lists
 
 
-# Function to write .pptx files with the same slide structure
-def write_pptx(slides_text: str, file_path: str, template_path: str):
+def write_pptx(slides_texts: list, file_path: str, template_path: str):
     prs = Presentation(template_path)
-
-    for idx, slide in enumerate(prs.slides):
-        # Ensure that we have enough slides in input text
-        if idx < len(slides_text):
-            text = slides_text[idx]
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    shape.text = text  # Replace with translated text for each slide
-
+    for slide_idx, slide in enumerate(prs.slides):
+        if slide_idx < len(slides_texts):
+            texts = slides_texts[
+                slide_idx
+            ]  # List of (shape_index, translated_text) tuples
+            for shape_idx, translated_text in texts:
+                shape = slide.shapes[shape_idx]
+                if shape.has_text_frame:
+                    shape.text_frame.clear()
+                    shape.text_frame.text = translated_text
     prs.save(file_path)
 
 

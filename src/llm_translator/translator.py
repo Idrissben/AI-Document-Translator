@@ -1,7 +1,6 @@
 # type: ignore
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langfuse.decorators import observe, langfuse_context
 from langchain_community.callbacks import get_openai_callback
 
 
@@ -14,13 +13,8 @@ def initialize_model(model: str = "gpt-4o"):
         print("Model Not Supported Yet")
 
 
-@observe(as_type="generation")
 def translate_text(
-    text,
-    model,
-    source_lang="English",
-    target_lang="French",
-    glossary=None,
+    text, model, source_lang="French", target_lang="English", glossary=None, trace=None
 ):
     parser = StrOutputParser()
 
@@ -45,15 +39,29 @@ def translate_text(
         [("system", system_template), ("user", "{text}")]
     )
     chain = prompt_template | model | parser
-
+    # creates generation
+    generation = trace.generation(
+        name="translation",
+        model=model.model_name,
+        model_parameters={
+            "maxTokens": model.max_tokens,
+            "temperature": model.temperature,
+        },
+        input=[
+            {"role": "system", "content": system_template},
+            {"role": "user", "content": f"{text}"},
+        ],
+    )
     with get_openai_callback() as cb:
         translated_text = chain.invoke({"text": text})
-        langfuse_context.update_current_observation(
+        generation.end(
+            output=translated_text,
             usage={
                 "input": cb.prompt_tokens,
                 "output": cb.completion_tokens,
                 "unit": "TOKENS",  # any of: "TOKENS", "CHARACTERS", "MILLISECONDS", "SECONDS", "IMAGES"
                 "total_cost": cb.total_cost,
-            }
+            },
         )
+    generation.end()
     return translated_text.strip()

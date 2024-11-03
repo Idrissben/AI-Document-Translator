@@ -25,7 +25,17 @@ pre-commit = "^4.0.1"
 ruff = "^0.7.1"
 mypy = "^1.13.0"
 ipykernel = "^6.29.5"
+pytest = "^8.3.3"
+pytest-django = "^4.9.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ds=translating_app.settings --reuse-db -v -s"
+python_files = ["tests.py", "test_*.py"]
+testpaths = ["translating_app", "src"]
+junit_family = "xunit2"
+filterwarnings = ["ignore::PendingDeprecationWarning"]

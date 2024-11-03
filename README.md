@@ -50,6 +50,13 @@ This documents the list of functionalities already implemented as well as the pl
 # Instructions to run the repository
 
 Ensure you have a version of python that is compatible with the project
+You also need to have a .env with the following variables "OPENAI_API_KEY", "LANGFUSE_SK", "LANGFUSE_PK", and "LANGFUSE_HOST"
+
+Here are my Langfuse credentials if needed, otherwise head to langfuse.com to create an account:
+
+LANGFUSE_SECRET_KEY=sk-lf-b868a424-a2e5-4a40-ad7b-54695811dbb4
+LANGFUSE_PUBLIC_KEY=pk-lf-9bcf4095-35f8-43c4-883d-5da1968e4e0a
+LANGFUSE_HOST="https://cloud.langfuse.com"
 
 ```bash
 poetry install
@@ -59,4 +66,6 @@ django manage.py migrate
 django manage.py runserver
 ```
 
-then head to your URL followed by "upload/
+then head to your URL followed by "upload/"
+
+Finally, after having translated the document, you can head to cloud.langfuse.com to observe the tracking of the total costs of the API calls and the number of tokens inputted or generated.

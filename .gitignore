@@ -12,5 +12,8 @@ temp/
 #Working files
 *.ipynb
 *.docx
+*.pptx
+*.xlsx
 
-
+#Media files
+media/
