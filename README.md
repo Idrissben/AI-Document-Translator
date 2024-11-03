@@ -10,23 +10,19 @@ By default, this llm-translator only accepts OpenAI models, but it can easily be
 
 It is a django application with a single endpoint "upload/" which is currently being received through an html interface.
 
-Incoming improvements are:
-- The maintaining of the appearance of the incoming word document through the translated one.
-- Optimization of the processing of large word documents.
-
 # Changelog
 
 This documents the list of functionalities already implemented as well as the planned improvements.
 
-## [Unreleased]
+## [1.2.0] - 2024-03-11
 
 ### Added
 - Tests to ensure the app is working
-- User history of glossary and previous uploads
 
 ### Improved
 - More front improvements
-- Optimization on treatment of large files to reduce the cost of consumption
+- Fixed a bug on pptx files where the text would be translated twice in each slide
+- Renamed folder names to be more explicit
 
 
 ## [1.1.0] - 2024-01-11
