@@ -28,5 +28,11 @@ jobs:
         poetry install --no-root
 
     - name: Run Tests
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+        LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+        LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
       run: |
         poetry run pytest .
+
