@@ -2,7 +2,9 @@
 from .utils import read_docx, write_docx, read_excel, write_excel, read_pptx, write_pptx
 from .translator import initialize_model, translate_text
 from langfuse import Langfuse
+from pptx import Presentation
 import os
+import io
 
 model = initialize_model()
 
@@ -40,21 +42,23 @@ def test_read_write_docx(tmp_path):
 
 
 def test_read_write_pptx(tmp_path):
-    pptx_template = "test.pptx"
-    pptx_file = tmp_path / "test_output.pptx"
-    slides_text = [
-        [(0, sample_text)]
-    ]  # List of slides, each slide has a list of (shape_index, text) tuples
+    sample_text = "This is a sample text"
+    slides_text = [[(0, sample_text)]]
+    pptx_output_file = tmp_path / "test_output.pptx"
 
-    # Write PPTX with sample text
-    assert os.path.exists(
-        pptx_template
-    ), "An empty PPTX file with one slide is needed to run this test"
-    write_pptx(slides_text, str(pptx_file), pptx_template)
-    assert os.path.exists(pptx_file), "New PPTX file with content should be created"
+    template_pptx = io.BytesIO()
+    prs = Presentation()
+    prs.slides.add_slide(prs.slide_layouts[0])  # Add a single slide
+    prs.save(template_pptx)
+    template_pptx.seek(0)  # Reset the file pointer to the start
 
-    # Read the PPTX and validate content
-    read_slides = read_pptx(str(pptx_file))
+    with open(pptx_output_file, "wb") as output_file:
+        output_file.write(template_pptx.read())  # Copy the template contents to output
+
+    # Call `write_pptx` function with the in-memory template path
+    write_pptx(slides_text, str(pptx_output_file), str(pptx_output_file))
+    read_slides = read_pptx(str(pptx_output_file))
+
     assert isinstance(read_slides, list), "Read PPTX content should be a list of slides"
     assert len(read_slides) == len(
         slides_text
