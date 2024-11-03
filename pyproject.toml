@@ -6,7 +6,7 @@ authors = ["pibs01241 <i.bennis.ib@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "3.10.12"
 langchain = "^0.3.6"
 openai = "^1.53.0"
 django = "^5.1.2"
