@@ -28,8 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS: list[str] = [
     "localhost",
-    "https://www.llmtranslate.org",
-    "https://llmtranslate.org",
+    "www.llmtranslate.org",
+    "llmtranslate.org",
     "aitranslator-127d6b3bff17.herokuapp.com",
 ]
 
