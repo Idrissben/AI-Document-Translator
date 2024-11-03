@@ -1,6 +1,8 @@
-# Office_translator
+# AI Document Translator
 
 [The app is accessible here](https://aitranslator-127d6b3bff17.herokuapp.com/upload/).
+
+The app will be moved to llmtranslate.org once the DNS migration is finished.
 
 An AI-based translator that can translate a given Word, Excel, or Powerpoint document in any given language. 
 It accepts .docx, .xlsx, or .pptx files of up to 10 mb, and contains the fellow features:
