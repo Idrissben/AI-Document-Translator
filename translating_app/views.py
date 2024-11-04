@@ -1,10 +1,13 @@
 # type: ignore
+import os
+import json
+from langfuse import Langfuse
 from django.conf import settings
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import csrf_protect
-from src.llm_translator.translator import initialize_model, translate_text
+from src.llm_translator.translator import initialize_model
 from src.llm_translator.utils import (
     read_docx,
     write_docx,
@@ -12,11 +15,13 @@ from src.llm_translator.utils import (
     write_pptx,
     read_excel,
     write_excel,
-    calculate_metric,
 )
-import os
-import json
-from langfuse import Langfuse
+from .utils import (
+    process_docx_file,
+    process_pptx_file,
+    process_xlsx_file,
+    evaluate_translation,
+)
 
 langfuse = Langfuse()
 
@@ -27,10 +32,10 @@ def upload_and_translate(request):
         try:
             # Get form data
             uploaded_file = request.FILES["document"]
-            ground_truth = request.POST.get("ground_truth_text")
-            glossary_file = request.FILES.get("glossary")
+            evaluation_method = request.POST.get("evaluation_method")
             source_lang = request.POST.get("source_language", "auto")
             target_lang = request.POST.get("target_language", "en")
+            glossary_file = request.FILES.get("glossary")
 
             # Validate file size (10MB limit)
             if uploaded_file.size > 10 * 1024 * 1024:
@@ -42,7 +47,7 @@ def upload_and_translate(request):
             temp_dir = os.path.join(settings.MEDIA_ROOT, "temp")
             os.makedirs(temp_dir, exist_ok=True)
 
-            # Save the uploaded file and get the absolute path
+            # Save the uploaded file
             temp_file_name = os.path.join("temp", uploaded_file.name)
             temp_file_path = default_storage.save(temp_file_name, uploaded_file)
             temp_file_full_path = default_storage.path(temp_file_path)
@@ -52,80 +57,67 @@ def upload_and_translate(request):
             # Initialize model
             model = initialize_model("gpt-4o")
 
+            # Load glossary if provided
             if glossary_file:
                 glossary = json.load(glossary_file)
             else:
                 glossary = None
-
-            # Initialize variable to hold translated output
-            translated_output = None
 
             # Initialize langfuse tracing
             trace = langfuse.trace(name="AI Document Translator")
 
             # Process based on file type
             if file_extension == ".docx":
-                # Read .docx content using the absolute path
-                input_text = read_docx(temp_file_full_path)
-
-                # Translate the text
-                translated_text = translate_text(
-                    input_text,
-                    model=model,
-                    glossary=glossary,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    trace=trace,
+                translated_output, original_input = process_docx_file(
+                    temp_file_full_path,
+                    model,
+                    glossary,
+                    source_lang,
+                    target_lang,
+                    trace,
                 )
-                translated_output = translated_text
 
-                # Save translated .docx file under MEDIA_ROOT
+                # Save translated .docx file
                 output_file_name = f"translated_{target_lang}_{uploaded_file.name}"
                 output_file_path = os.path.join(settings.MEDIA_ROOT, output_file_name)
-                write_docx(translated_text, output_file_path)
+                write_docx(translated_output, output_file_path)
+
+                translated_output_text = translated_output  # For evaluation
 
             elif file_extension == ".pptx":
-                # Read .pptx content; slides_content is a list of slides,
-                # each slide is a list of (shape_index, text) tuples
-                slides_content = read_pptx(temp_file_full_path)
+                (
+                    translated_content,
+                    original_input,
+                    translated_output_text,
+                ) = process_pptx_file(
+                    temp_file_full_path,
+                    model,
+                    glossary,
+                    source_lang,
+                    target_lang,
+                    trace,
+                )
 
-                # Translate each text in each slide individually
-                translated_content = []
-                for slide_texts in slides_content:
-                    translated_slide_texts = []
-                    for shape_idx, text in slide_texts:
-                        translated_text = translate_text(
-                            text,
-                            model=model,
-                            glossary=glossary,
-                            source_lang=source_lang,
-                            target_lang=target_lang,
-                            trace=trace,
-                        )
-                        translated_slide_texts.append((shape_idx, translated_text))
-                    translated_content.append(translated_slide_texts)
-
-                # Save translated .pptx file under MEDIA_ROOT
+                # Save translated .pptx file
                 output_file_name = f"translated_{target_lang}_{uploaded_file.name}"
                 output_file_path = os.path.join(settings.MEDIA_ROOT, output_file_name)
                 write_pptx(translated_content, output_file_path, temp_file_full_path)
 
             elif file_extension == ".xlsx":
-                # Read .xlsx content
-                excel_content = read_excel(temp_file_full_path)
-
-                # Translate each row individually
-                translated_content = translate_text(
-                    excel_content,
-                    model=model,
-                    glossary=glossary,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    trace=trace,
+                (
+                    translated_content,
+                    original_input,
+                    translated_output_text,
+                ) = process_xlsx_file(
+                    temp_file_full_path,
+                    model,
+                    glossary,
+                    source_lang,
+                    target_lang,
+                    trace,
                 )
-                translated_output = translated_content
 
-                # Save translated .xlsx file under MEDIA_ROOT
+                # Save translated .xlsx file
                 output_file_name = f"translated_{target_lang}_{uploaded_file.name}"
                 output_file_path = os.path.join(settings.MEDIA_ROOT, output_file_name)
                 write_excel(translated_content, output_file_path)
@@ -133,11 +125,70 @@ def upload_and_translate(request):
             else:
                 return JsonResponse({"error": "Unsupported file format"}, status=400)
 
-            # Prepare context for the template
-            if ground_truth and ground_truth.strip():
-                score = calculate_metric(ground_truth, translated_output)
+            # Handle evaluation method
+            reference_content = None
+            if evaluation_method == "reference_file":
+                reference_file = request.FILES.get("reference_file")
+                if not reference_file:
+                    return JsonResponse(
+                        {"error": "Reference file not provided"}, status=400
+                    )
+
+                # Save and read the reference file
+                ref_file_name = os.path.join("temp", reference_file.name)
+                ref_file_path = default_storage.save(ref_file_name, reference_file)
+                ref_file_full_path = default_storage.path(ref_file_path)
+                ref_file_extension = os.path.splitext(reference_file.name)[1].lower()
+
+                # Read reference content based on file type
+                if ref_file_extension == ".docx":
+                    reference_content = read_docx(ref_file_full_path)
+                elif ref_file_extension == ".pptx":
+                    slides_content = read_pptx(ref_file_full_path)
+                    reference_texts = [
+                        text for slide in slides_content for _, text in slide
+                    ]
+                    reference_content = "\n".join(reference_texts)
+                elif ref_file_extension == ".xlsx":
+                    excel_content = read_excel(ref_file_full_path)
+                    reference_texts = [
+                        str(cell) for row in excel_content for cell in row
+                    ]
+                    reference_content = "\n".join(reference_texts)
+                else:
+                    return JsonResponse(
+                        {"error": "Unsupported reference file format"}, status=400
+                    )
+
+                # Clean up reference file
+                default_storage.delete(ref_file_path)
+
+            elif evaluation_method == "reference_text":
+                reference_content = request.POST.get("reference_text")
+                if not reference_content:
+                    return JsonResponse(
+                        {"error": "Reference text not provided"}, status=400
+                    )
+            elif evaluation_method == "self_evaluation":
+                # No additional data needed for self-evaluation
+                pass
+            elif evaluation_method == "no_evaluation":
+                # No evaluation needed
+                pass
             else:
-                score = None
+                return JsonResponse({"error": "Invalid evaluation method"}, status=400)
+
+            # Evaluate translation
+            score = evaluate_translation(
+                evaluation_method,
+                original_input,
+                translated_output_text,
+                source_lang,
+                target_lang,
+                model,
+                trace,
+                reference_content=reference_content,
+            )
 
             translated_file_url = settings.MEDIA_URL + output_file_name
 

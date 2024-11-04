@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure--4y5j28!^_s(qgygs23e^t8j^k19w5s!r$gu!=pb1@pdhlk%sv
 DEBUG = True
 
 ALLOWED_HOSTS: list[str] = [
-    "localhost",
+    "127.0.0.1",
     "www.llmtranslate.org",
     "llmtranslate.org",
     "aitranslator-127d6b3bff17.herokuapp.com",
@@ -36,7 +36,8 @@ ALLOWED_HOSTS: list[str] = [
 CSRF_TRUSTED_ORIGINS = [
     "https://www.llmtranslate.org",
     "https://llmtranslate.org",
-    "https://aitranslator-127d6b3bff17.herokuapp.com",]
+    "https://aitranslator-127d6b3bff17.herokuapp.com",
+]
 
 # Application definition
 

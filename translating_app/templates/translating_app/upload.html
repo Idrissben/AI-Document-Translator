@@ -102,32 +102,64 @@
                             </div>
                         </div>
 
-                        <!--  Ground Truth in the form of a file
+                        <!-- Evaluation Method Section -->
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">
-                                Upload Ground Truth File (Optional)
+                                Evaluation Method
+                            </label>
+                            <div class="mt-1">
+                                <div class="flex items-center">
+                                    <input type="radio" name="evaluation_method" value="reference_file" id="evaluation_reference_file" class="form-radio" checked>
+                                    <label for="evaluation_reference_file" class="ml-2 block text-sm text-gray-700">
+                                        Reference File
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" name="evaluation_method" value="reference_text" id="evaluation_reference_text" class="form-radio">
+                                    <label for="evaluation_reference_text" class="ml-2 block text-sm text-gray-700">
+                                        Reference Text
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" name="evaluation_method" value="self_evaluation" id="evaluation_self_evaluation" class="form-radio">
+                                    <label for="evaluation_self_evaluation" class="ml-2 block text-sm text-gray-700">
+                                        Self-evaluation
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" name="evaluation_method" value="no_evaluation" id="evaluation_no_evaluation" class="form-radio">
+                                    <label for="evaluation_no_evaluation" class="ml-2 block text-sm text-gray-700">
+                                        No Evaluation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reference File Upload Section -->
+                        <div class="space-y-2" id="referenceFileSection">
+                            <label class="block text-sm font-medium text-gray-700">
+                                Upload Reference File
                             </label>
                             <div class="mt-1 flex items-center">
-                                <input type="file" name="ground_truth" accept=".docx, .xlsx, .pptx" class="w-full text-sm text-gray-500">
+                                <input type="file" name="reference_file" accept=".docx, .xlsx, .pptx" class="w-full text-sm text-gray-500">
                             </div>
                             <p class="mt-2 text-xs text-gray-500">
                                 Upload the target document for translation quality assessment.
                             </p>
-                        </div> -->
+                        </div>
 
-                        <!-- Ground Truth Input Section in the form of a string-->
-                        <div class="space-y-2">
+                        <!-- Reference Text Input Section -->
+                        <div class="space-y-2 hidden" id="referenceTextSection">
                             <label class="block text-sm font-medium text-gray-700">
-                                Enter Ground Truth Text (Optional)
+                                Enter Reference Text
                             </label>
                             <div class="mt-1">
-                                <textarea name="ground_truth_text" rows="4" class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Enter the ground truth text here"></textarea>
+                                <textarea name="reference_text" rows="4" class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Enter the reference text here"></textarea>
                             </div>
                             <p class="mt-2 text-xs text-gray-500">
                                 Provide the target text for translation quality assessment.
                             </p>
                         </div>
-
 
                         <!-- File Selected Alert (hidden by default) -->
                         <div id="fileAlert" class="hidden bg-green-50 border border-green-200 rounded-md p-4">
@@ -142,7 +174,7 @@
                         </div>
                     </div>
 
-                    <!-- Glossary Truth Upload Section -->
+                    <!-- Glossary Upload Section -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">
                             Upload Glossary File (Optional)
@@ -221,6 +253,34 @@
             document.getElementById('loadingIcon').classList.remove('hidden');
             document.getElementById('buttonText').textContent = 'Translating...';
         });
+
+        // Evaluation method handling
+        const evaluationRadios = document.querySelectorAll('input[name="evaluation_method"]');
+        const referenceFileSection = document.getElementById('referenceFileSection');
+        const referenceTextSection = document.getElementById('referenceTextSection');
+
+        function updateEvaluationSections() {
+            const selectedValue = document.querySelector('input[name="evaluation_method"]:checked').value;
+            if (selectedValue === 'reference_file') {
+                referenceFileSection.classList.remove('hidden');
+                referenceTextSection.classList.add('hidden');
+            } else if (selectedValue === 'reference_text') {
+                referenceFileSection.classList.add('hidden');
+                referenceTextSection.classList.remove('hidden');
+            } else {
+                // Self-evaluation or No Evaluation
+                referenceFileSection.classList.add('hidden');
+                referenceTextSection.classList.add('hidden');
+            }
+        }
+
+        // Add event listeners to the radio buttons
+        evaluationRadios.forEach(radio => {
+            radio.addEventListener('change', updateEvaluationSections);
+        });
+
+        // Initialize the display
+        updateEvaluationSections();
     </script>
 </body>
 </html>
