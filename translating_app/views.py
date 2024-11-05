@@ -190,9 +190,7 @@ def upload_and_translate(request):
                 reference_content=reference_content,
             )
 
-            langfuse.score(
-                trace_id=trace.trace_id, name="evaluation method", value=score
-            )
+            langfuse.score(trace_id=trace.trace_id, name=evaluation_method, value=score)
 
             translated_file_url = settings.MEDIA_URL + output_file_name
 
