@@ -8,33 +8,45 @@ from src.llm_translator.utils import (
     embedding_similarity,
 )
 
+def chunk_text(text, max_length=10000):
+    paragraphs = text.split("\n")  
+    chunks = []
+    current_chunk = ""
 
-def process_docx_file(
-    input_file_path, model, glossary, source_lang, target_lang, trace
-):
-    # Read .docx content
+    for paragraph in paragraphs:
+        if len(current_chunk) + len(paragraph) <= max_length:
+            current_chunk += paragraph + "\n\n"
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = paragraph + "\n\n"
+
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks
+
+
+def process_docx_file(input_file_path, model, glossary, source_lang, target_lang, trace):
     input_text = read_docx(input_file_path)
+    chunks = chunk_text(input_text)  # Split input into manageable chunks
 
-    # Translate the text
-    translated_text = translate_text(
-        input_text,
-        model=model,
-        glossary=glossary,
-        source_lang=source_lang,
-        target_lang=target_lang,
-        trace=trace,
-    )
+    translated_text = ""
+    for chunk in chunks:
+        translated_chunk = translate_text(
+            chunk,
+            model=model,
+            glossary=glossary,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            trace=trace,
+        )
+        translated_text += translated_chunk + "\n"
 
-    return translated_text, input_text
+    return translated_text.strip(), input_text
 
 
-def process_pptx_file(
-    input_file_path, model, glossary, source_lang, target_lang, trace
-):
-    # Read .pptx content
+def process_pptx_file(input_file_path, model, glossary, source_lang, target_lang, trace):
     slides_content = read_pptx(input_file_path)
-
-    # Translate each text in each slide individually
     translated_content = []
     original_texts = []
     translated_texts = []
@@ -43,23 +55,29 @@ def process_pptx_file(
         translated_slide_texts = []
         for shape_idx, text in slide_texts:
             original_texts.append(text)
-            translated_text = translate_text(
-                text,
-                model=model,
-                glossary=glossary,
-                source_lang=source_lang,
-                target_lang=target_lang,
-                trace=trace,
-            )
-            translated_slide_texts.append((shape_idx, translated_text))
-            translated_texts.append(translated_text)
+            chunks = chunk_text(text)
+
+            translated_chunk_text = ""
+            for chunk in chunks:
+                translated_chunk = translate_text(
+                    chunk,
+                    model=model,
+                    glossary=glossary,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    trace=trace,
+                )
+                translated_chunk_text += translated_chunk + "\n"
+
+            translated_slide_texts.append((shape_idx, translated_chunk_text.strip()))
+            translated_texts.append(translated_chunk_text.strip())
         translated_content.append(translated_slide_texts)
 
-    # Flatten texts for evaluation
     original_input = "\n".join(original_texts)
     translated_output_text = "\n".join(translated_texts)
 
     return translated_content, original_input, translated_output_text
+
 
 
 def process_xlsx_file(
@@ -137,3 +155,4 @@ def evaluate_translation(
     if span:
         span.end(output=score)
     return score
+
