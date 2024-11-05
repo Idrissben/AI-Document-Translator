@@ -1,4 +1,4 @@
-#type: ignore
+# type: ignore
 import io
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
