@@ -4,7 +4,8 @@ from src.llm_translator.utils import (
     read_docx,
     read_pptx,
     read_excel,
-    calculate_metric,
+    calculate_meteor_score,
+    embedding_similarity,
 )
 
 
@@ -64,35 +65,33 @@ def process_pptx_file(
 def process_xlsx_file(
     input_file_path, model, glossary, source_lang, target_lang, trace
 ):
-    # Read .xlsx content
+    # Read .xlsx content as a list of lists of cell content
     excel_content = read_excel(input_file_path)
 
-    # Translate each cell individually
-    translated_content = []
-    original_texts = []
-    translated_texts = []
+    # Flatten the Excel content into a single string, preserving row and cell structure
+    flattened_text = "".join(
+        ["\t".join(str(cell) if cell else "" for cell in row) for row in excel_content]
+    )
 
-    for row in excel_content:
-        translated_row = []
-        for cell in row:
-            original_texts.append(str(cell))
-            translated_cell = translate_text(
-                str(cell),
-                model=model,
-                glossary=glossary,
-                source_lang=source_lang,
-                target_lang=target_lang,
-                trace=trace,
-            )
-            translated_row.append(translated_cell)
-            translated_texts.append(translated_cell)
-        translated_content.append(translated_row)
+    # Translate the entire content at once
+    translated_text = translate_text(
+        flattened_text,
+        model=model,
+        glossary=glossary,
+        source_lang=source_lang,
+        target_lang=target_lang,
+        trace=trace,
+    )
 
-    # Flatten texts for evaluation
-    original_input = "\n".join(original_texts)
-    translated_output_text = "\n".join(translated_texts)
+    # Split translated text back into rows and cells
+    translated_content = [row.split("\t") for row in translated_text.split("\n")]
 
-    return translated_content, original_input, translated_output_text
+    # Ensure all rows have the same number of cells as the original content
+    for i, row in enumerate(translated_content):
+        while len(row) < len(excel_content[i]):
+            row.append("")
+
+    return translated_content, flattened_text, translated_text
 
 
 def evaluate_translation(
@@ -114,9 +113,11 @@ def evaluate_translation(
             "evaluation method": evaluation_method,
         },
     )
-    if evaluation_method == "reference_file" or evaluation_method == "reference_text":
+    if evaluation_method == "reference_file":
+        score = embedding_similarity(reference_content, translated_output_text)
+    elif evaluation_method == "reference_text":
         # Compare translated output with reference content
-        score = calculate_metric(reference_content, translated_output_text)
+        score = calculate_meteor_score(reference_content, translated_output_text)
     elif evaluation_method == "self_evaluation":
         # Back-translate the translated output
         back_translated_text = translate_text(
@@ -127,7 +128,7 @@ def evaluate_translation(
             trace=trace,
         )
         # Compare back-translated text with original input
-        score = calculate_metric(original_input, back_translated_text)
+        score = embedding_similarity(original_input, back_translated_text)
     elif evaluation_method == "no_evaluation":
         score = None
     else:

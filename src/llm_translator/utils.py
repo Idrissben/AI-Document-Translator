@@ -4,6 +4,7 @@ from pptx import Presentation
 import openpyxl
 import nltk
 from nltk.translate.meteor_score import meteor_score
+import numpy as np
 
 try:
     nltk.data.find("corpora/wordnet")
@@ -69,14 +70,28 @@ def read_excel(file_path: str):
     return "\n".join(full_text)
 
 
-def write_excel(text: str, file_path: str):
+def write_excel(rows: list, file_path: str):
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    for line in text.split("\n"):
-        row_data = line.split("\t")
-        sheet.append(row_data)
+    for row in rows:
+        sheet.append(row)
     workbook.save(file_path)
 
 
-def calculate_metric(reference_translation: str, predicted_translation: str):
+def calculate_meteor_score(reference_translation: str, predicted_translation: str):
     return meteor_score([reference_translation.split()], predicted_translation.split())
+
+
+def get_embedding(text, model="text-embedding-3-small"):
+    from openai import OpenAI
+
+    client = OpenAI()
+    text = text.replace("\n", " ")
+    return client.embeddings.create(input=[text], model=model).data[0].embedding
+
+
+def embedding_similarity(reference_translation: str, predicted_translation: str):
+    A = get_embedding(reference_translation)
+    B = get_embedding(predicted_translation)
+
+    return np.dot(A, B) / (np.linalg.norm(A) * np.linalg.norm(B))

@@ -1,7 +1,9 @@
 # type: ignore
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.callbacks import get_openai_callback
+from langfuse import Langfuse
+
+langfuse = Langfuse()
 
 
 def initialize_model(model: str = "gpt-4o"):
@@ -19,27 +21,22 @@ def translate_text(
     parser = StrOutputParser()
 
     if glossary:
-        glossary_terms = "\n".join(
-            [f"{key}: {value}" for key, value in glossary.items()]
+        prompt = langfuse.get_prompt("Translation_with_glossary")
+        prompt_template = prompt.compile(
+            source_lang=source_lang,
+            target_lang=target_lang,
+            input=text,
+            glossary=glossary,
         )
-        system_template = f"""
-                            You are a translation assistant that translates text from {source_lang} to {target_lang}.
-                            Please use the following glossary for specific terms:
-                            {glossary_terms}
-
-                            Translate the following text preserving the formatting:
-
-                            """
     else:
-        system_template = f"""
-                        Translate the following text from {source_lang} to {target_lang}, preserving the formatting:
+        prompt = langfuse.get_prompt("translation_no_glossary")
+        prompt_template = prompt.compile(
+            source_lang=source_lang,
+            target_lang=target_lang,
+            input=text,
+        )
 
-                        """
-    prompt_template = ChatPromptTemplate.from_messages(
-        [("system", system_template), ("user", "{text}")]
-    )
-    chain = prompt_template | model | parser
-    # creates generation
+    chain = model | parser
     generation = trace.generation(
         name="translation",
         model=model.model_name,
@@ -47,13 +44,10 @@ def translate_text(
             "maxTokens": model.max_tokens,
             "temperature": model.temperature,
         },
-        input=[
-            {"role": "system", "content": system_template},
-            {"role": "user", "content": f"{text}"},
-        ],
+        input=prompt_template,
     )
     with get_openai_callback() as cb:
-        translated_text = chain.invoke({"text": text})
+        translated_text = chain.invoke(prompt_template)
         generation.end(
             output=translated_text,
             usage={

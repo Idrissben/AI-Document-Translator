@@ -71,7 +71,8 @@ def test_read_write_pptx(tmp_path):
 # Test read and write Excel functions
 def test_read_write_excel(tmp_path):
     excel_file = tmp_path / "test.xlsx"
-    write_excel("Col1\tCol2\nVal1\tVal2", str(excel_file))
+    sample_text = "Col1\tCol2\nVal1\tVal2"
+    write_excel([row.split("\t") for row in sample_text.split("\n")], str(excel_file))
     assert os.path.exists(excel_file), "Excel file should be created"
 
     read_text = read_excel(str(excel_file))
